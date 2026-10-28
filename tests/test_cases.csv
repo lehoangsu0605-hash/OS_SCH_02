@@ -1,0 +1,8 @@
+case,pid,arrival,burst,expected_note
+normal,P1,0,7,Bo du lieu mau; kiem tra ca hai thuat toan
+normal,P2,2,4,Bo du lieu mau; kiem tra preemption cua SRTF
+normal,P3,4,1,Bo du lieu mau; tien trinh ngan den khi CPU dang ban
+normal,P4,5,4,Bo du lieu mau; kiem tra tiep tuc lap lich
+late_arrival,P1,3,2,CPU idle truoc thoi diem 3
+late_arrival,P2,5,1,CPU idle giua cac tien trinh neu khong co tien trinh san sang
+single,P1,0,5,Chi mot tien trinh
