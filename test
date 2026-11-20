@@ -1,0 +1,178 @@
+
+import unittest
+import importlib.util
+import os
+
+# Import chương trình chính
+file_path = os.path.join(os.path.dirname(__file__), "code hdh.py")
+
+spec = importlib.util.spec_from_file_location("scheduler", file_path)
+scheduler = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(scheduler)
+
+
+class TestScheduler(unittest.TestCase):
+
+
+    def test_valid_input(self):
+        data = [
+            {"pid": "P1", "arrival": "0", "burst": "5"},
+            {"pid": "P2", "arrival": "2", "burst": "3"}
+        ]
+
+        result = scheduler.parse_processes(data)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]["pid"], "P1")
+
+    def test_empty_pid(self):
+        data = [
+            {"pid": "", "arrival": "0", "burst": "5"}
+        ]
+
+        with self.assertRaises(ValueError):
+            scheduler.parse_processes(data)
+
+    def test_duplicate_pid(self):
+        data = [
+            {"pid": "P1", "arrival": "0", "burst": "5"},
+            {"pid": "P1", "arrival": "1", "burst": "3"}
+        ]
+
+        with self.assertRaises(ValueError):
+            scheduler.parse_processes(data)
+
+    def test_negative_arrival(self):
+        data = [
+            {"pid": "P1", "arrival": "-1", "burst": "5"}
+        ]
+
+        with self.assertRaises(ValueError):
+            scheduler.parse_processes(data)
+
+    def test_zero_burst(self):
+        data = [
+            {"pid": "P1", "arrival": "0", "burst": "0"}
+        ]
+
+        with self.assertRaises(ValueError):
+            scheduler.parse_processes(data)
+
+    def test_invalid_number(self):
+        data = [
+            {"pid": "P1", "arrival": "abc", "burst": "5"}
+        ]
+
+        with self.assertRaises(ValueError):
+            scheduler.parse_processes(data)
+
+
+
+    def test_sjf_sample(self):
+        processes = [
+            {"pid": "P1", "arrival": 0, "burst": 7},
+            {"pid": "P2", "arrival": 2, "burst": 4},
+            {"pid": "P3", "arrival": 4, "burst": 1},
+            {"pid": "P4", "arrival": 5, "burst": 4}
+        ]
+
+        results, segments = scheduler.sjf_non_preemptive(processes)
+
+        expected_order = ["P1", "P3", "P2", "P4"]
+
+        actual_order = [
+            seg["pid"] for seg in segments
+        ]
+
+        self.assertEqual(actual_order, expected_order)
+
+    def test_sjf_completion_time(self):
+        processes = [
+            {"pid": "P1", "arrival": 0, "burst": 5},
+            {"pid": "P2", "arrival": 1, "burst": 2}
+        ]
+
+        results, segments = scheduler.sjf_non_preemptive(processes)
+
+        self.assertEqual(results[0]["completion"], 5)
+        self.assertEqual(results[1]["completion"], 7)
+
+
+
+    def test_srtf_preemption(self):
+        processes = [
+            {"pid": "P1", "arrival": 0, "burst": 7},
+            {"pid": "P2", "arrival": 2, "burst": 4},
+            {"pid": "P3", "arrival": 4, "burst": 1},
+            {"pid": "P4", "arrival": 5, "burst": 4}
+        ]
+
+        results, segments = scheduler.srtf_preemptive(processes)
+
+        expected_order = [
+            "P1", "P2", "P3", "P2", "P4", "P1"
+        ]
+
+        actual_order = [
+            seg["pid"] for seg in segments
+        ]
+
+        self.assertEqual(actual_order, expected_order)
+
+    def test_srtf_response_time(self):
+        processes = [
+            {"pid": "P1", "arrival": 0, "burst": 7},
+            {"pid": "P2", "arrival": 2, "burst": 4},
+            {"pid": "P3", "arrival": 4, "burst": 1},
+            {"pid": "P4", "arrival": 5, "burst": 4}
+        ]
+
+        results, segments = scheduler.srtf_preemptive(processes)
+
+        self.assertEqual(results[0]["response"], 0)
+        self.assertEqual(results[1]["response"], 0)
+        self.assertEqual(results[2]["response"], 0)
+        self.assertEqual(results[3]["response"], 2)
+
+
+
+    def test_cpu_idle(self):
+        processes = [
+            {"pid": "P1", "arrival": 3, "burst": 2},
+            {"pid": "P2", "arrival": 8, "burst": 1}
+        ]
+
+        results, segments = scheduler.sjf_non_preemptive(processes)
+
+        self.assertEqual(segments[0]["pid"], "IDLE")
+        self.assertEqual(segments[0]["start"], 0)
+        self.assertEqual(segments[0]["end"], 3)
+
+
+
+    def test_waiting_time(self):
+        processes = [
+            {"pid": "P1", "arrival": 0, "burst": 5},
+            {"pid": "P2", "arrival": 1, "burst": 2}
+        ]
+
+        results, segments = scheduler.sjf_non_preemptive(processes)
+
+        self.assertEqual(results[0]["waiting"], 0)
+        self.assertEqual(results[1]["waiting"], 4)
+
+    def test_turnaround_time(self):
+        processes = [
+            {"pid": "P1", "arrival": 0, "burst": 5},
+            {"pid": "P2", "arrival": 1, "burst": 2}
+        ]
+
+        results, segments = scheduler.sjf_non_preemptive(processes)
+
+        self.assertEqual(results[0]["turnaround"], 5)
+        self.assertEqual(results[1]["turnaround"], 6)
+
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
